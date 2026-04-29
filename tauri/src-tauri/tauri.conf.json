@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "PomodoCat",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "identifier": "com.pomellacat.pomodocat",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -32,8 +32,9 @@
       "assetProtocol": {
         "enable": true,
         "scope": [
+          "$DATA/PomodoCat/cats/**",
+          "$CONFIG/PomodoCat/cats/**",
           "$HOME/Library/Application Support/PomodoCat/cats/**",
-          "$APPDATA/PomodoCat/cats/**",
           "$HOME/.config/PomodoCat/cats/**"
         ]
       }
