@@ -102,6 +102,13 @@ jobs:
             gh release upload "$TAG" "$f" --clobber --repo "${{ github.repository }}"
           }
 
+          # Mac : the .command needs the +x bit, which GitHub Releases strips
+          # on plain file downloads. We wrap it in a zip that preserves Unix
+          # permissions so a double-click after Archive Utility extraction
+          # actually runs.
+          chmod +x tauri/installers/install-mac.command
+          ( cd tauri/installers && zip -X install-mac.zip install-mac.command )
+          upload "tauri/installers/install-mac.zip"
           upload "tauri/installers/install-mac.command"
           upload "tauri/installers/install-windows.bat"
           upload "tauri/installers/install-windows.ps1"

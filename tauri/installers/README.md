@@ -4,10 +4,16 @@ Ces deux scripts permettent à n'importe qui de tester PomodoCat **sans installe
 
 ## macOS
 
-1. Télécharge **`install-mac.command`** sur ton Mac.
-2. Double-clic dessus dans le Finder. *(Si macOS refuse, clic-droit → Ouvrir → Ouvrir.)*
-3. Le terminal s'ouvre, le script tourne 30s à 1 min.
-4. PomodoCat se lance automatiquement à la fin.
+1. Télécharge **`install-mac.zip`** sur ton Mac. *(Pas le `.command` direct — GitHub strip le bit exécutable au download. Le zip le préserve.)*
+2. Safari / Chrome décompresse automatiquement → tu obtiens `install-mac.command` dans `Downloads/`.
+3. Double-clic dessus dans le Finder. *(Si Gatekeeper refuse au premier essai, clic-droit → Ouvrir → Ouvrir dans la dialog.)*
+4. Le terminal s'ouvre, le script tourne 30s à 1 min.
+5. PomodoCat se lance automatiquement à la fin.
+
+**Si même le double-clic refuse** (macOS Sequoia est strict), ouvre Terminal et lance :
+```bash
+bash ~/Downloads/install-mac.command
+```
 
 L'icône apparaît dans la **barre de menu** (en haut à droite). Clic gauche pour afficher la fenêtre, clic droit pour le menu.
 
