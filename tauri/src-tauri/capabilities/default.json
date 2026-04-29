@@ -7,7 +7,12 @@
     "core:default",
     "core:window:default",
     "core:window:allow-close",
+    "core:window:allow-show",
+    "core:window:allow-hide",
     "core:webview:default",
+    "core:tray:default",
+    "core:menu:default",
+    "core:event:default",
     "fs:default",
     "fs:allow-read-file",
     "dialog:default"

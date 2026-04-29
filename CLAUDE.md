@@ -68,10 +68,12 @@ npx tauri build --no-bundle  # juste le binaire
 - ✅ Scan auto du dossier user
 - ✅ Overlay full-screen au-dessus de tout (vraie fenêtre Tauri transparente)
 - ✅ Bouton X bas-centre + Esc, pas de clic-vidéo-pour-fermer
-- ✅ DMG produit pour aarch64 (Apple Silicon)
-- ⏳ MSI Windows : pas encore testé sur une vraie machine Windows
-- ⏳ GitHub Actions configuré mais pas encore tagué
-- ⏳ Icône : placeholder dégradé, pas encore d'icon set définitif
+- ✅ Icône procédurale (tomate + chat) générée par `tauri/scripts/make-icon.py`
+- ✅ System tray Mac (menu bar) + Windows (notification area) avec menu Afficher / Démarrer-Pause / Reset / Skip / Quitter
+- ✅ Fenêtre principale se cache (au lieu de quitter) à la fermeture, l'app reste dans le tray
+- ✅ DMG aarch64 + DMG x86_64 + MSI/NSIS Windows produits par GitHub Actions
+- ✅ Installeurs user-friendly dans `tauri/installers/` (`install-mac.command` + `install-windows.bat`)
+- ✅ Vidéos `.webm` (VP9 alpha) commit dans `tauri/sample-cats/` pour shipping
 
 ## Si l'utilisateur dit "build Windows"
 

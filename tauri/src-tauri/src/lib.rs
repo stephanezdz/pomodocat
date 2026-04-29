@@ -1,7 +1,11 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Mutex;
-use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{
+    menu::{Menu, MenuItem, PredefinedMenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Emitter, Manager, WebviewUrl, WebviewWindowBuilder,
+};
 
 // ============================================================================
 // Cat library
@@ -223,6 +227,82 @@ fn close_cat_overlay(app: tauri::AppHandle) -> Result<(), String> {
 // App entry point
 // ============================================================================
 
+// ============================================================================
+// System tray (macOS menu bar + Windows system tray)
+// ============================================================================
+
+fn build_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
+    // Menu items — IDs are read in `on_menu_event`.
+    let show_item     = MenuItem::with_id(app, "tray:show",   "Afficher PomodoCat", true, None::<&str>)?;
+    let toggle_item   = MenuItem::with_id(app, "tray:toggle", "Démarrer / Pause",   true, None::<&str>)?;
+    let reset_item    = MenuItem::with_id(app, "tray:reset",  "Réinitialiser",      true, None::<&str>)?;
+    let skip_item     = MenuItem::with_id(app, "tray:skip",   "Passer la phase",    true, None::<&str>)?;
+    let separator     = PredefinedMenuItem::separator(app)?;
+    let quit_item     = MenuItem::with_id(app, "tray:quit",   "Quitter",            true, Some("Cmd+Q"))?;
+
+    let menu = Menu::with_items(
+        app,
+        &[&show_item, &separator, &toggle_item, &reset_item, &skip_item, &separator, &quit_item],
+    )?;
+
+    let tray = TrayIconBuilder::with_id("pomodocat-tray")
+        .icon(app.default_window_icon().expect("no default icon").clone())
+        .icon_as_template(true) // Mac menu bar adapts to dark/light
+        .tooltip("PomodoCat")
+        .menu(&menu)
+        .show_menu_on_left_click(false)
+        .on_menu_event(|app, event| {
+            let id = event.id.as_ref();
+            match id {
+                "tray:show"   => show_main_window(app),
+                "tray:quit"   => app.exit(0),
+                // The other actions are forwarded to the frontend, which holds
+                // the timer state.
+                "tray:toggle" | "tray:reset" | "tray:skip" => {
+                    let _ = app.emit("tray-action", id.trim_start_matches("tray:"));
+                    show_main_window(app);
+                }
+                _ => {}
+            }
+        })
+        .on_tray_icon_event(|tray, event| {
+            // Left click = toggle main window visibility
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                let app = tray.app_handle();
+                if let Some(window) = app.get_webview_window("main") {
+                    if window.is_visible().unwrap_or(false) && window.is_focused().unwrap_or(false) {
+                        let _ = window.hide();
+                    } else {
+                        let _ = window.show();
+                        let _ = window.unminimize();
+                        let _ = window.set_focus();
+                    }
+                }
+            }
+        })
+        .build(app)?;
+
+    let _ = tray;
+    Ok(())
+}
+
+fn show_main_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+    }
+}
+
+// ============================================================================
+// App entry point
+// ============================================================================
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -236,6 +316,20 @@ pub fn run() {
             get_overlay_cat,
             close_cat_overlay,
         ])
+        .setup(|app| {
+            build_tray(app.handle())?;
+            Ok(())
+        })
+        // Hide the main window on close instead of quitting — keeps PomodoCat in
+        // the tray ready to be re-opened. The user quits via the tray menu.
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                if window.label() == "main" {
+                    let _ = window.hide();
+                    api.prevent_close();
+                }
+            }
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
