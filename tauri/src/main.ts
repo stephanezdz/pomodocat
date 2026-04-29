@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { CatStore, PrefsStore, TimerStore } from "./store";
 import {
   SidebarItem,
@@ -95,3 +96,15 @@ cats.refresh().then(() => {
 
 // Re-scan cats when the window regains focus (matches Mac-app behavior).
 window.addEventListener("focus", () => { cats.refresh(); });
+
+// ---------------------------------------------------------------------------
+// Tray actions forwarded from Rust → control the timer from the menu bar
+// ---------------------------------------------------------------------------
+
+listen<string>("tray-action", (event) => {
+  switch (event.payload) {
+    case "toggle": timer.toggle(); break;
+    case "reset":  timer.reset();  break;
+    case "skip":   timer.skip();   break;
+  }
+});

@@ -54,6 +54,7 @@ jobs:
         run: npm ci
 
       - name: Build Tauri app
+        id: tauri-build
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -64,11 +65,49 @@ jobs:
           releaseBody: |
             ## PomodoCat ${{ github.ref_name }}
 
+            ### Téléchargement direct
             - **macOS Apple Silicon** : `PomodoCat_*_aarch64.dmg`
             - **macOS Intel** : `PomodoCat_*_x64.dmg`
             - **Windows x64** : `PomodoCat_*_x64-setup.exe` ou `PomodoCat_*_x64_en-US.msi`
 
-            Voir [README.md](https://github.com/${{ github.repository }}/blob/main/tauri/README.md) pour l'installation.
+            ### Installation pour testeurs (sans toolchain)
+            - **macOS** : télécharge `install-mac.command`, double-clic
+            - **Windows** : télécharge `install-windows.bat`, double-clic
+
+            Les chats `.webm` sont aussi joints à la release pour que les installeurs les téléchargent automatiquement.
+
+            Voir [tauri/README.md](https://github.com/${{ github.repository }}/blob/main/tauri/README.md).
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+      # Upload the user-facing install scripts + cat videos to the same release.
+      # Only one job needs to do this — we pick macos-14 because it's the first
+      # to finish in the matrix.
+      - name: Upload installers and cat videos
+        if: matrix.platform == 'macos-14'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          TAG="${{ github.ref_name }}"
+          # Find the release ID created by tauri-action.
+          RELEASE_ID=$(gh api "repos/${{ github.repository }}/releases/tags/$TAG" --jq '.id')
+          echo "Release ID: $RELEASE_ID"
+
+          # Helper that uploads via the gh CLI.
+          upload() {
+            local f="$1"
+            [[ -f "$f" ]] || { echo "skip: $f not found"; return; }
+            echo "Uploading $f"
+            gh release upload "$TAG" "$f" --clobber
+          }
+
+          upload "tauri/installers/install-mac.command"
+          upload "tauri/installers/install-windows.bat"
+          upload "tauri/installers/install-windows.ps1"
+
+          # Cat videos live in the workflow checkout under tauri/sample-cats/.
+          for f in tauri/sample-cats/*.webm tauri/sample-cats/*.mov; do
+            upload "$f"
+          done
