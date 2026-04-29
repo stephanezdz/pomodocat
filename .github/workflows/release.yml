@@ -91,16 +91,15 @@ jobs:
         run: |
           set -e
           TAG="${{ github.ref_name }}"
-          # Find the release ID created by tauri-action.
-          RELEASE_ID=$(gh api "repos/${{ github.repository }}/releases/tags/$TAG" --jq '.id')
-          echo "Release ID: $RELEASE_ID"
+          # NOTE: don't query `releases/tags/$TAG` — the GitHub API returns 404
+          # for *draft* releases on that endpoint, and `set -e` would kill the
+          # whole upload step. `gh release upload` handles drafts fine by tag.
 
-          # Helper that uploads via the gh CLI.
           upload() {
             local f="$1"
             [[ -f "$f" ]] || { echo "skip: $f not found"; return; }
             echo "Uploading $f"
-            gh release upload "$TAG" "$f" --clobber
+            gh release upload "$TAG" "$f" --clobber --repo "${{ github.repository }}"
           }
 
           upload "tauri/installers/install-mac.command"
