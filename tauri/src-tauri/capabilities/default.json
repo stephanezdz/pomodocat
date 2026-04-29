@@ -1,0 +1,15 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capabilities for both the main and the cat-overlay windows",
+  "windows": ["main", "cat-overlay"],
+  "permissions": [
+    "core:default",
+    "core:window:default",
+    "core:window:allow-close",
+    "core:webview:default",
+    "fs:default",
+    "fs:allow-read-file",
+    "dialog:default"
+  ]
+}

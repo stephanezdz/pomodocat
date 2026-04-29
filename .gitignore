@@ -1,0 +1,37 @@
+# ----- macOS -----
+.DS_Store
+*.swp
+
+# ----- SwiftUI / SwiftPM build artefacts -----
+/.build/
+/build/
+.swiftpm/
+xcuserdata/
+*.xcuserstate
+DerivedData/
+
+# ----- Node / Vite (Tauri frontend) -----
+tauri/node_modules/
+tauri/dist/
+tauri/.vite/
+
+# ----- Rust / Cargo (Tauri backend) -----
+tauri/src-tauri/target/
+tauri/src-tauri/Cargo.lock.bak
+
+# ----- Tauri generated -----
+tauri/src-tauri/gen/
+
+# ----- Logs / env -----
+*.log
+.env
+.env.local
+.env.*.local
+
+# ----- IDE / editor cruft -----
+.vscode/
+.idea/
+*.iml
+
+# ----- Claude Code local settings -----
+.claude/settings.local.json

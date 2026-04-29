@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PomodoCat — Cat</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background: transparent !important;
+        overflow: hidden;
+        cursor: default;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "SF Pro Text", sans-serif;
+      }
+      #stage {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #stage video,
+      #stage img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: transparent;
+      }
+      #stage .fallback {
+        font-size: 520px;
+        line-height: 1;
+        text-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+      }
+      #close-btn {
+        position: fixed;
+        bottom: 56px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.55);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        color: white;
+        cursor: pointer;
+        font-size: 22px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        transition: background 0.15s ease, transform 0.12s ease;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index: 10;
+      }
+      #close-btn:hover {
+        background: rgba(0, 0, 0, 0.75);
+        transform: translateX(-50%) scale(1.05);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage"></div>
+    <button id="close-btn" type="button" title="Fermer (Esc)">✕</button>
+    <script type="module" src="/src/overlay.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,74 @@
+name: Release PomodoCat
+
+# Trigger:
+#   - push of a tag like v0.1.0  → build all platforms + create a GitHub Release
+#   - manually via the Actions tab
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-14            # Apple Silicon runner
+            args: --target aarch64-apple-darwin
+          - platform: macos-13            # Intel runner
+            args: --target x86_64-apple-darwin
+          - platform: windows-latest
+            args: ""
+
+    runs-on: ${{ matrix.platform }}
+
+    defaults:
+      run:
+        working-directory: tauri
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: tauri/package-lock.json
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-14' && 'aarch64-apple-darwin' || matrix.platform == 'macos-13' && 'x86_64-apple-darwin' || '' }}
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tauri/src-tauri
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: tauri
+          tagName: ${{ github.ref_name }}
+          releaseName: "PomodoCat ${{ github.ref_name }}"
+          releaseBody: |
+            ## PomodoCat ${{ github.ref_name }}
+
+            - **macOS Apple Silicon** : `PomodoCat_*_aarch64.dmg`
+            - **macOS Intel** : `PomodoCat_*_x64.dmg`
+            - **Windows x64** : `PomodoCat_*_x64-setup.exe` ou `PomodoCat_*_x64_en-US.msi`
+
+            Voir [README.md](https://github.com/${{ github.repository }}/blob/main/tauri/README.md) pour l'installation.
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PomodoCat</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <!-- Splash overlay (shown on launch, hidden after ~1.6s) -->
+    <div id="splash" class="splash">
+      <div class="splash-glow"></div>
+      <div class="splash-content">
+        <div class="splash-logo">
+          <span class="splash-tomato">🍅</span>
+          <span class="splash-cat">🐱</span>
+        </div>
+        <div class="splash-title">PomodoCat</div>
+        <div class="splash-subtitle">Focus &amp; félins</div>
+      </div>
+    </div>
+
+    <!-- Main app shell -->
+    <div id="app" class="app hidden">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-logo">🐱</div>
+          <div class="sidebar-name">
+            <div class="sidebar-name-primary">PomodoCat</div>
+            <div class="sidebar-name-secondary">Focus &amp; félins</div>
+          </div>
+        </div>
+        <nav class="sidebar-nav" id="sidebar-nav"></nav>
+        <div class="sidebar-footer">
+          <span class="dot dot-green"></span>
+          <span>Prêt</span>
+          <span class="version">v0.1</span>
+        </div>
+      </aside>
+
+      <main class="content" id="content"></main>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
