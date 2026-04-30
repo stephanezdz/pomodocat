@@ -373,10 +373,28 @@ function buildMediaElement(
     video.muted = opts.muted ?? true;
     video.playsInline = true;
     if (opts.fillCover) video.style.objectFit = "cover";
-    video.play().catch(() => { /* autoplay restriction: ignore */ });
+    // Diagnostics — surface load errors via console (right-click → Inspect).
+    video.addEventListener("error", () => {
+      const err = video.error;
+      console.error("[PomodoCat] video error", {
+        id: cat.id,
+        url,
+        code: err?.code,
+        message: err?.message,
+        readyState: video.readyState,
+        networkState: video.networkState,
+      });
+    });
+    video.addEventListener("loadeddata", () => {
+      console.log("[PomodoCat] video loaded", cat.id, video.videoWidth, "×", video.videoHeight);
+    });
+    video.play().catch((e) => {
+      console.warn("[PomodoCat] video.play() rejected", cat.id, e);
+    });
     return video;
   }
   const img = document.createElement("img");
   img.src = url;
+  img.addEventListener("error", () => console.error("[PomodoCat] image error", cat.id, url));
   return img;
 }

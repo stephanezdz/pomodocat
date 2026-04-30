@@ -90,7 +90,10 @@ export class CatStore {
 
   /** Convert a local file path into a URL the WebView can load. */
   toAssetURL(cat: CatAsset): string {
-    return convertFileSrc(cat.path);
+    const url = convertFileSrc(cat.path);
+    // Diagnostic — visible via right-click → Inspect → Console.
+    console.log("[PomodoCat] cat asset URL:", { id: cat.id, path: cat.path, url });
+    return url;
   }
 
   private persist() {
