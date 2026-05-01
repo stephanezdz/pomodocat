@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::{
+    http::{header, Response, StatusCode},
     menu::{Menu, MenuItem, PredefinedMenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Emitter, Manager, WebviewUrl, WebviewWindowBuilder,
@@ -126,6 +128,99 @@ fn prettify(raw: &str) -> String {
         })
         .collect::<Vec<_>>()
         .join(" ")
+}
+
+// ============================================================================
+// Custom `cat://` URI scheme — bypasses asset-protocol scope quirks on Windows
+// ============================================================================
+//
+// On Windows the built-in `asset://` protocol was failing for files outside
+// the per-bundle app data dir, so we serve cats ourselves via a dedicated
+// scheme. URL shape: `cat://localhost/<filename>` where `<filename>` is the
+// percent-encoded basename of a file in the user's cats folder.
+
+fn percent_decode(s: &str) -> String {
+    let bytes = s.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%' && i + 2 < bytes.len() {
+            let h = (bytes[i + 1] as char).to_digit(16);
+            let l = (bytes[i + 2] as char).to_digit(16);
+            if let (Some(h), Some(l)) = (h, l) {
+                out.push((h * 16 + l) as u8);
+                i += 3;
+                continue;
+            }
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+fn mime_for(path: &std::path::Path) -> &'static str {
+    match path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|s| s.to_lowercase())
+        .as_deref()
+    {
+        Some("webm") => "video/webm",
+        Some("mp4")  => "video/mp4",
+        Some("mov")  => "video/quicktime",
+        Some("gif")  => "image/gif",
+        Some("png")  => "image/png",
+        _ => "application/octet-stream",
+    }
+}
+
+fn handle_cat_request(
+    request: tauri::http::Request<Vec<u8>>,
+) -> Response<Cow<'static, [u8]>> {
+    let path = request.uri().path();
+    // Strip the leading slash, percent-decode, and treat as a bare filename.
+    let raw = path.trim_start_matches('/');
+    let filename = percent_decode(raw);
+
+    // Reject path traversal attempts.
+    if filename.contains("..") || filename.contains('/') || filename.contains('\\') {
+        return Response::builder()
+            .status(StatusCode::FORBIDDEN)
+            .body(Cow::Borrowed(b"" as &[u8]))
+            .unwrap();
+    }
+
+    let dir = match cats_dir() {
+        Ok(d) => d,
+        Err(_) => {
+            return Response::builder()
+                .status(StatusCode::INTERNAL_SERVER_ERROR)
+                .body(Cow::Borrowed(b"" as &[u8]))
+                .unwrap();
+        }
+    };
+
+    let full = dir.join(&filename);
+    let bytes = match std::fs::read(&full) {
+        Ok(b) => b,
+        Err(_) => {
+            return Response::builder()
+                .status(StatusCode::NOT_FOUND)
+                .body(Cow::Borrowed(b"" as &[u8]))
+                .unwrap();
+        }
+    };
+
+    let mime = mime_for(&full);
+    Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, mime)
+        .header(header::CONTENT_LENGTH, bytes.len().to_string())
+        .header(header::ACCEPT_RANGES, "bytes")
+        .header(header::CACHE_CONTROL, "no-store")
+        .body(Cow::Owned(bytes))
+        .unwrap()
 }
 
 // ============================================================================
@@ -308,6 +403,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
+        .register_uri_scheme_protocol("cat", |_app, request| handle_cat_request(request))
         .manage(OverlayState::default())
         .invoke_handler(tauri::generate_handler![
             get_cats_dir,

@@ -1,4 +1,4 @@
-import { invoke, convertFileSrc } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
 import { CatAsset, DEFAULT_PREFS, Phase, Preferences } from "./types";
 
 /** Tiny observable: subscribe to an event and broadcast on change. */
@@ -88,10 +88,14 @@ export class CatStore {
     return this.cats.find((c) => c.id === this.selectedId) ?? this.cats[0] ?? null;
   }
 
-  /** Convert a local file path into a URL the WebView can load. */
+  /**
+   * Build the URL the WebView uses to load a cat. We serve files via our own
+   * `cat://` URI scheme (handled in Rust) instead of Tauri's `asset://` —
+   * the asset protocol scope was inconsistent on Windows for files outside
+   * the per-bundle app data directory.
+   */
   toAssetURL(cat: CatAsset): string {
-    const url = convertFileSrc(cat.path);
-    // Diagnostic — visible via right-click → Inspect → Console.
+    const url = `cat://localhost/${encodeURIComponent(cat.id)}`;
     console.log("[PomodoCat] cat asset URL:", { id: cat.id, path: cat.path, url });
     return url;
   }

@@ -1,4 +1,4 @@
-import { invoke, convertFileSrc } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
 interface OverlayCat {
@@ -21,7 +21,11 @@ async function init() {
     return;
   }
 
-  const url = convertFileSrc(cat.path);
+  // Use the same custom `cat://` scheme as the main window. Derive the
+  // filename from the absolute path (handles both / and \\ separators).
+  const filename = cat.path.split(/[\\/]/).pop() ?? "";
+  const url = `cat://localhost/${encodeURIComponent(filename)}`;
+  console.log("[PomodoCat overlay] cat URL:", { path: cat.path, url });
 
   if (cat.kind === "video") {
     const video = document.createElement("video");
